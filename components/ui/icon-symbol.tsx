@@ -5,7 +5,6 @@ import { SymbolWeight, SymbolViewProps } from "expo-symbols";
 import { ComponentProps } from "react";
 import { OpaqueColorValue, type StyleProp, type TextStyle } from "react-native";
 
-type IconMapping = Record<SymbolViewProps["name"], ComponentProps<typeof MaterialIcons>["name"]>;
 type IconSymbolName = keyof typeof MAPPING;
 
 /**
@@ -18,7 +17,44 @@ const MAPPING = {
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
-} as IconMapping;
+  "magnifyingglass": "search",
+  "heart.fill": "favorite",
+  "heart": "favorite-border",
+  "map.fill": "map",
+  "star.fill": "star",
+  "star": "star-border",
+  "star.leadinghalf.filled": "star-half",
+  "location.fill": "location-on",
+  "location.north.fill": "navigation",
+  "directions.walk": "directions-walk",
+  "directions.bike": "directions-bike",
+  "accessible": "accessible",
+  "pets": "pets",
+  "child.care": "child-care",
+  "plus": "add",
+  "chevron.left": "chevron-left",
+  "chevron.down": "keyboard-arrow-down",
+  "chevron.up": "keyboard-arrow-up",
+  "checkmark": "check",
+  "checkmark.circle.fill": "check-circle",
+  "xmark": "close",
+  "xmark.circle.fill": "cancel",
+  "arrow.right": "arrow-forward",
+  "calendar": "calendar-today",
+  "person.fill": "person",
+  "person.circle.fill": "account-circle",
+  "trash": "delete",
+  "pawprint.fill": "pets",
+  "tree.fill": "park",
+  "mappin.and.ellipse": "place",
+  "info.circle": "info",
+  "list.bullet": "list",
+  "square.grid.2x2": "grid-view",
+  "slider.horizontal.3": "tune",
+  "clock.fill": "schedule",
+  "sun.max.fill": "wb-sunny",
+  "moon.fill": "nightlight",
+} as Record<string, ComponentProps<typeof MaterialIcons>["name"]>;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
@@ -37,5 +73,5 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  return <MaterialIcons color={color} size={size} name={MAPPING[name] as ComponentProps<typeof MaterialIcons>["name"]} style={style} />;
 }
