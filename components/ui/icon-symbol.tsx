@@ -54,6 +54,20 @@ const MAPPING = {
   "clock.fill": "schedule",
   "sun.max.fill": "wb-sunny",
   "moon.fill": "nightlight",
+  "cloud.sun.fill": "wb-cloudy",
+  "cloud.fill": "cloud",
+  "cloud.fog.fill": "blur-on",
+  "cloud.drizzle.fill": "grain",
+  "cloud.rain.fill": "opacity",
+  "cloud.bolt.fill": "flash-on",
+  "snowflake": "ac-unit",
+  "umbrella.fill": "beach-access",
+  "location.circle.fill": "my-location",
+  "arrow.triangle.turn.up.right.fill": "near-me",
+  // 分類圖示直接使用 Material Icons 名稱(data/parks.ts 的 CATEGORY_ICONS)
+  "directions-walk": "directions-walk",
+  "directions-bike": "directions-bike",
+  "child-care": "child-care",
 } as Record<string, ComponentProps<typeof MaterialIcons>["name"]>;
 
 /**

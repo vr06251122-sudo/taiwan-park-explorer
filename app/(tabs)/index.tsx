@@ -1,4 +1,4 @@
-import { FlatList, View, Text, Pressable, StyleSheet } from "react-native";
+import { FlatList, ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
@@ -6,6 +6,8 @@ import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useUserLocation } from "@/lib/location-context";
+import { haversineKm } from "@/lib/geo";
 import {
   TAIWAN_PARKS,
   type ParkCategory,
@@ -19,6 +21,16 @@ const CATEGORIES: ParkCategory[] = ["walk", "inclusive", "slide", "pet", "bike"]
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { coords, status, requestLocation } = useUserLocation();
+
+  const nearbyParks = coords
+    ? TAIWAN_PARKS.map((park) => ({
+        park,
+        distanceKm: haversineKm(coords.latitude, coords.longitude, park.latitude, park.longitude),
+      }))
+        .sort((a, b) => a.distanceKm - b.distanceKm)
+        .slice(0, 4)
+    : [];
 
   const popularParks = [...TAIWAN_PARKS]
     .sort((a, b) => b.funRating - a.funRating)
@@ -53,6 +65,7 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer className="px-4">
+      <ScrollView showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
@@ -84,6 +97,49 @@ export default function HomeScreen() {
 
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+          離你最近
+        </Text>
+        {coords && (
+          <Pressable onPress={() => router.push("/search?sort=distance" as any)}>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>查看全部</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {coords ? (
+        <FlatList
+          data={nearbyParks}
+          renderItem={({ item }) => <ParkCard park={item.park} distanceKm={item.distanceKm} />}
+          keyExtractor={(item) => item.park.id}
+          scrollEnabled={false}
+          contentContainerStyle={styles.parkList}
+        />
+      ) : (
+        <Pressable
+          onPress={requestLocation}
+          disabled={status === "loading"}
+          style={({ pressed }) => [
+            styles.locationPrompt,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <IconSymbol name="location.circle.fill" size={28} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.locationPromptTitle, { color: colors.foreground }]}>
+              {status === "loading" ? "正在取得你的位置..." : "開啟定位,推薦附近的公園"}
+            </Text>
+            <Text style={[styles.locationPromptSub, { color: colors.muted }]}>
+              {status === "denied"
+                ? "定位權限被拒絕,請在瀏覽器或系統設定中允許後再試一次"
+                : "允許定位後,這裡會顯示離你最近的公園"}
+            </Text>
+          </View>
+        </Pressable>
+      )}
+
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
           熱門公園
         </Text>
         <Pressable onPress={() => router.push("/search" as any)}>
@@ -98,6 +154,7 @@ export default function HomeScreen() {
         scrollEnabled={false}
         contentContainerStyle={styles.parkList}
       />
+      </ScrollView>
     </ScreenContainer>
   );
 }
@@ -172,5 +229,23 @@ const styles = StyleSheet.create({
   },
   parkList: {
     paddingBottom: 24,
+  },
+  locationPrompt: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    marginBottom: 20,
+  },
+  locationPromptTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  locationPromptSub: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

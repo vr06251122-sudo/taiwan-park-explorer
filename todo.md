@@ -13,3 +13,6 @@
 - [x] 更新 app.config.ts 品牌資訊
 - [x] 生成 App 圖示
 - [x] 測試與驗證
+- [x] 使用者定位:首頁「離你最近」推薦 + 搜尋依距離排序 (expo-location + haversine)
+- [x] 天氣整合:公園詳情頁顯示即時天氣與降雨機率 (Open-Meteo API)
+- [x] 搜尋頁地圖模式:OpenStreetMap 圖磚地圖 + 分類專屬圖示標記

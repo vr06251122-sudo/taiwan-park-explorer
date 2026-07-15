@@ -12,13 +12,16 @@ import {
   CATEGORY_ICONS,
 } from "@/data/parks";
 import { useFavorites } from "@/lib/favorites-context";
+import { formatDistance } from "@/lib/geo";
 
 interface ParkCardProps {
   park: Park;
   showFavorite?: boolean;
+  /** 與使用者的距離(公里),提供時會顯示距離標籤 */
+  distanceKm?: number;
 }
 
-export function ParkCard({ park, showFavorite = true }: ParkCardProps) {
+export function ParkCard({ park, showFavorite = true, distanceKm }: ParkCardProps) {
   const router = useRouter();
   const colors = useColors();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -81,6 +84,14 @@ export function ParkCard({ park, showFavorite = true }: ParkCardProps) {
             <Text style={[styles.locationText, { color: colors.muted }]} numberOfLines={1}>
               {park.city} {park.district} · {park.address}
             </Text>
+            {distanceKm !== undefined && (
+              <View style={[styles.distanceBadge, { backgroundColor: colors.primary + "18" }]}>
+                <IconSymbol name="location.fill" size={11} color={colors.primary} />
+                <Text style={[styles.distanceText, { color: colors.primary }]}>
+                  {formatDistance(distanceKm)}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -151,6 +162,18 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 13,
     flex: 1,
+  },
+  distanceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  distanceText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   categoriesRow: {
     flexDirection: "row",

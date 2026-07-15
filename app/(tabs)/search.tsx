@@ -12,9 +12,12 @@ import { useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
+import { ParkMap } from "@/components/park-map";
 import { CategoryPill } from "@/components/category-pill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useUserLocation } from "@/lib/location-context";
+import { haversineKm } from "@/lib/geo";
 import {
   TAIWAN_PARKS,
   CITIES,
@@ -26,7 +29,8 @@ const ALL_CATEGORIES: ParkCategory[] = ["walk", "inclusive", "slide", "pet", "bi
 
 export default function SearchScreen() {
   const colors = useColors();
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; sort?: string }>();
+  const { coords, requestLocation } = useUserLocation();
 
   const [searchText, setSearchText] = useState("");
   const [selectedCity, setSelectedCity] = useState("全部");
@@ -36,6 +40,8 @@ export default function SearchScreen() {
   const [minRating, setMinRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
+  const [sortByDistance, setSortByDistance] = useState(params.sort === "distance");
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   const toggleCategory = useCallback((cat: ParkCategory) => {
     setSelectedCategories((prev) =>
@@ -62,6 +68,34 @@ export default function SearchScreen() {
       return true;
     });
   }, [searchText, selectedCity, selectedCategories, minRating]);
+
+  // 附上與使用者的距離,並依需求排序
+  const resultParks = useMemo(() => {
+    const withDistance = filteredParks.map((park) => ({
+      park,
+      distanceKm: coords
+        ? haversineKm(coords.latitude, coords.longitude, park.latitude, park.longitude)
+        : undefined,
+    }));
+    if (sortByDistance && coords) {
+      withDistance.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+    }
+    return withDistance;
+  }, [filteredParks, coords, sortByDistance]);
+
+  const toggleDistanceSort = () => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!coords) {
+      // 還沒有定位就先請求;取得後排序自動生效
+      requestLocation();
+    }
+    setSortByDistance((prev) => !prev);
+  };
+
+  const toggleViewMode = () => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setViewMode((prev) => (prev === "list" ? "map" : "list"));
+  };
 
   const handleCitySelect = (city: string) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -225,30 +259,88 @@ export default function SearchScreen() {
         <Text style={[styles.resultsCount, { color: colors.muted }]}>
           共 {filteredParks.length} 個公園
         </Text>
-        {(searchText || selectedCity !== "全部" || selectedCategories.length > 0 || minRating > 0) && (
-          <Pressable onPress={clearAll}>
-            <Text style={[styles.clearText, { color: colors.primary }]}>清除篩選</Text>
+        <View style={styles.resultsActions}>
+          <Pressable
+            onPress={toggleDistanceSort}
+            style={[
+              styles.actionPill,
+              {
+                backgroundColor: sortByDistance ? colors.primary + "22" : "transparent",
+                borderColor: sortByDistance ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <IconSymbol
+              name="arrow.triangle.turn.up.right.fill"
+              size={13}
+              color={sortByDistance ? colors.primary : colors.muted}
+            />
+            <Text
+              style={[
+                styles.actionPillText,
+                { color: sortByDistance ? colors.primary : colors.muted },
+              ]}
+            >
+              距離
+            </Text>
           </Pressable>
-        )}
+          <Pressable
+            onPress={toggleViewMode}
+            style={[
+              styles.actionPill,
+              {
+                backgroundColor: viewMode === "map" ? colors.primary + "22" : "transparent",
+                borderColor: viewMode === "map" ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <IconSymbol
+              name={viewMode === "map" ? "list.bullet" : "map.fill"}
+              size={13}
+              color={viewMode === "map" ? colors.primary : colors.muted}
+            />
+            <Text
+              style={[
+                styles.actionPillText,
+                { color: viewMode === "map" ? colors.primary : colors.muted },
+              ]}
+            >
+              {viewMode === "map" ? "列表" : "地圖"}
+            </Text>
+          </Pressable>
+          {(searchText || selectedCity !== "全部" || selectedCategories.length > 0 || minRating > 0) && (
+            <Pressable onPress={clearAll}>
+              <Text style={[styles.clearText, { color: colors.primary }]}>清除</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
-      <FlatList
-        data={filteredParks}
-        renderItem={({ item }) => <ParkCard park={item} />}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.resultsList}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <IconSymbol name="magnifyingglass" size={48} color={colors.muted} />
-            <Text style={[styles.emptyText, { color: colors.muted }]}>
-              找不到符合條件的公園
-            </Text>
-            <Text style={[styles.emptySubtext, { color: colors.muted }]}>
-              試試調整搜尋條件
-            </Text>
-          </View>
-        }
-      />
+      {viewMode === "map" ? (
+        <View style={styles.mapContainer}>
+          <ParkMap parks={filteredParks} />
+        </View>
+      ) : (
+        <FlatList
+          data={resultParks}
+          renderItem={({ item }) => (
+            <ParkCard park={item.park} distanceKm={sortByDistance ? item.distanceKm : undefined} />
+          )}
+          keyExtractor={(item) => item.park.id}
+          contentContainerStyle={styles.resultsList}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <IconSymbol name="magnifyingglass" size={48} color={colors.muted} />
+              <Text style={[styles.emptyText, { color: colors.muted }]}>
+                找不到符合條件的公園
+              </Text>
+              <Text style={[styles.emptySubtext, { color: colors.muted }]}>
+                試試調整搜尋條件
+              </Text>
+            </View>
+          }
+        />
+      )}
     </ScreenContainer>
   );
 }
@@ -363,6 +455,29 @@ const styles = StyleSheet.create({
   clearText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  resultsActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  actionPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  actionPillText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  mapContainer: {
+    flex: 1,
+    minHeight: 380,
+    marginBottom: 16,
   },
   resultsList: {
     paddingBottom: 24,

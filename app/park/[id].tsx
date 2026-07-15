@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { StarRating } from "@/components/star-rating";
+import { WeatherCard } from "@/components/weather-card";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useFavorites } from "@/lib/favorites-context";
@@ -156,6 +157,15 @@ export default function ParkDetailScreen() {
               {park.funRating >= 4.5 ? "超好玩" : park.funRating >= 4 ? "很好玩" : park.funRating >= 3 ? "還不錯" : "普通"}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>即時天氣</Text>
+          <WeatherCard
+            latitude={park.latitude}
+            longitude={park.longitude}
+            locationName={`${park.city}${park.district}`}
+          />
         </View>
 
         <View style={styles.section}>
