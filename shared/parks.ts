@@ -27,6 +27,8 @@ export interface Park {
   facilities: string[];
   googleMapsUrl: string;
   reviews: ParkReview[];
+  /** Google 照片資源名稱(places/xxx/photos/yyy),經 /api/photo 轉發取得圖片 */
+  photoNames: string[];
 }
 
 export const CITIES = [

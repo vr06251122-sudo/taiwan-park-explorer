@@ -20,11 +20,11 @@ export default function FavoritesScreen() {
   return (
     <ScreenContainer className="px-4">
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>我的收藏</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>口袋名單</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           {favorites.length > 0
-            ? `已收藏 ${favorites.length} 個公園`
-            : "尚無收藏公園"}
+            ? `收了 ${favorites.length} 個好地方`
+            : "把想去的公園收進來"}
         </Text>
       </View>
 
@@ -42,10 +42,10 @@ export default function FavoritesScreen() {
             <View style={styles.emptyState}>
               <IconSymbol name="heart" size={48} color={colors.muted} />
               <Text style={[styles.emptyText, { color: colors.muted }]}>
-                還沒有收藏任何公園
+                口袋名單還空著
               </Text>
               <Text style={[styles.emptySubtext, { color: colors.muted }]}>
-                在公園詳情頁點擊愛心圖示即可收藏
+                看到喜歡的公園,點 ❤️ 收起來!
               </Text>
             </View>
           }

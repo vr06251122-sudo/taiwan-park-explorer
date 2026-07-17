@@ -118,7 +118,7 @@ export default function SearchScreen() {
         <IconSymbol name="magnifyingglass" size={20} color={colors.muted} />
         <TextInput
           style={[styles.searchInput, { color: colors.foreground }]}
-          placeholder="輸入公園名稱或地區..."
+          placeholder="今天想去哪玩?"
           placeholderTextColor={colors.muted}
           value={searchText}
           onChangeText={setSearchText}
@@ -328,7 +328,7 @@ export default function SearchScreen() {
         </View>
       ) : viewMode === "map" ? (
         <View style={styles.mapContainer}>
-          <ParkMap parks={filteredParks} />
+          <ParkMap parks={filteredParks} userCoords={coords} />
         </View>
       ) : (
         <FlatList

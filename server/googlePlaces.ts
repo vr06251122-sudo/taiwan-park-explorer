@@ -26,6 +26,7 @@ const LIST_FIELD_MASK = [
   "places.editorialSummary",
   "places.googleMapsUri",
   "places.types",
+  "places.photos",
 ].join(",");
 
 const DETAIL_FIELD_MASK = [
@@ -39,6 +40,7 @@ const DETAIL_FIELD_MASK = [
   "googleMapsUri",
   "types",
   "reviews",
+  "photos",
 ].join(",");
 
 interface GooglePlace {
@@ -59,6 +61,7 @@ interface GooglePlace {
     relativePublishTimeDescription?: string;
     publishTime?: string;
   }[];
+  photos?: { name?: string; widthPx?: number; heightPx?: number }[];
 }
 
 function getApiKey(): string {
@@ -91,7 +94,7 @@ function inferCategories(types: string[] | undefined): ParkCategory[] {
   return [...cats];
 }
 
-function toPark(place: GooglePlace, taggedCategories: ParkCategory[] = []): Park {
+function toPark(place: GooglePlace, taggedCategories: ParkCategory[] = [], maxPhotos = 1): Park {
   const address = place.formattedAddress ?? "";
   const { city, district } = parseAddress(address);
   const inferred = inferCategories(place.types);
@@ -120,6 +123,10 @@ function toPark(place: GooglePlace, taggedCategories: ParkCategory[] = []): Park
     facilities: [],
     googleMapsUrl: place.googleMapsUri ?? "",
     reviews,
+    photoNames: (place.photos ?? [])
+      .slice(0, maxPhotos)
+      .map((p) => p.name ?? "")
+      .filter(Boolean),
   };
 }
 
@@ -222,7 +229,7 @@ export async function parkDetails(placeId: string): Promise<Park> {
     { method: "GET" },
     DETAIL_FIELD_MASK
   );
-  return toPark(data as GooglePlace);
+  return toPark(data as GooglePlace, [], 6);
 }
 
 /** 批次取得多個公園(收藏頁用),單筆失敗不影響其他 */

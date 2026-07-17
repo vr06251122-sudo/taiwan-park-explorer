@@ -8,11 +8,19 @@ export { CITIES, PARK_CATEGORIES } from "../shared/parks";
 import type { ParkCategory } from "../shared/parks";
 
 export const CATEGORY_LABELS: Record<ParkCategory, string> = {
-  walk: "單純散步",
-  inclusive: "共融式",
-  slide: "簡單溜滑梯",
-  pet: "寵物",
+  walk: "散步放空",
+  inclusive: "共融遊戲場",
+  slide: "溜滑梯",
+  pet: "遛狗放風",
   bike: "滑步車",
+};
+
+export const CATEGORY_EMOJI: Record<ParkCategory, string> = {
+  walk: "🚶",
+  inclusive: "🤝",
+  slide: "🛝",
+  pet: "🐾",
+  bike: "🚲",
 };
 
 export const CATEGORY_COLORS: Record<ParkCategory, string> = {

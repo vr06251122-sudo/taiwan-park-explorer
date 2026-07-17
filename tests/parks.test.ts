@@ -5,10 +5,10 @@ import { parseAddress, CATEGORY_QUERIES } from "../server/googlePlaces";
 describe("Category constants", () => {
   it("should have all 5 category labels", () => {
     expect(Object.keys(CATEGORY_LABELS).length).toBe(5);
-    expect(CATEGORY_LABELS.walk).toBe("單純散步");
-    expect(CATEGORY_LABELS.inclusive).toBe("共融式");
-    expect(CATEGORY_LABELS.slide).toBe("簡單溜滑梯");
-    expect(CATEGORY_LABELS.pet).toBe("寵物");
+    expect(CATEGORY_LABELS.walk).toBe("散步放空");
+    expect(CATEGORY_LABELS.inclusive).toBe("共融遊戲場");
+    expect(CATEGORY_LABELS.slide).toBe("溜滑梯");
+    expect(CATEGORY_LABELS.pet).toBe("遛狗放風");
     expect(CATEGORY_LABELS.bike).toBe("滑步車");
   });
 

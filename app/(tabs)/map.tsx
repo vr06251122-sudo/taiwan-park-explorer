@@ -82,7 +82,7 @@ export default function MapScreen() {
         ]}
       >
         <IconSymbol name="location.north.fill" size={18} color="#FFFFFF" />
-        <Text style={styles.navButtonText}>Google 地圖導航</Text>
+        <Text style={styles.navButtonText}>帶我去</Text>
       </Pressable>
     </View>
   );

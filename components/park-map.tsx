@@ -47,9 +47,11 @@ function yToLat(y: number, zoom: number): number {
 interface ParkMapProps {
   parks: Park[];
   height?: number;
+  /** 使用者目前位置,提供時會顯示藍點與「回到我附近」按鈕 */
+  userCoords?: { latitude: number; longitude: number } | null;
 }
 
-export function ParkMap({ parks, height = 420 }: ParkMapProps) {
+export function ParkMap({ parks, height = 420, userCoords }: ParkMapProps) {
   const router = useRouter();
   const colors = useColors();
   const windowWidth = useWindowDimensions().width;
@@ -123,6 +125,12 @@ export function ParkMap({ parks, height = 420 }: ParkMapProps) {
     }));
   };
 
+  const goToMe = () => {
+    if (!userCoords) return;
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setView({ lat: userCoords.latitude, lon: userCoords.longitude, zoom: 14 });
+  };
+
   // 計算目前視窗需要的圖磚與各公園的畫面位置
   const { tiles, markers } = useMemo(() => {
     if (!width) return { tiles: [], markers: [] };
@@ -191,6 +199,21 @@ export function ParkMap({ parks, height = 420 }: ParkMapProps) {
           />
         ))}
 
+        {/* 使用者位置藍點 */}
+        {userCoords && width > 0 && (() => {
+          const { lat, lon, zoom } = view;
+          const tlX = lonToX(lon, zoom) - width / 2;
+          const tlY = latToY(lat, zoom) - height / 2;
+          const ux = lonToX(userCoords.longitude, zoom) - tlX;
+          const uy = latToY(userCoords.latitude, zoom) - tlY;
+          if (ux < -30 || ux > width + 30 || uy < -30 || uy > height + 30) return null;
+          return (
+            <View pointerEvents="none" style={[styles.userHalo, { left: ux - 14, top: uy - 14 }]}>
+              <View style={styles.userDot} />
+            </View>
+          );
+        })()}
+
         {markers.map(({ park, left, top }) => {
           const mainCategory = park.categories[0];
           const color = CATEGORY_COLORS[mainCategory];
@@ -226,6 +249,14 @@ export function ParkMap({ parks, height = 420 }: ParkMapProps) {
         <Pressable onPress={() => changeZoom(-1)} style={styles.zoomBtn}>
           <Text style={[styles.zoomText, { color: colors.foreground }]}>−</Text>
         </Pressable>
+        {userCoords && (
+          <>
+            <View style={[styles.zoomDivider, { backgroundColor: colors.border }]} />
+            <Pressable onPress={goToMe} style={styles.zoomBtn}>
+              <IconSymbol name="location.circle.fill" size={22} color={colors.primary} />
+            </Pressable>
+          </>
+        )}
       </View>
 
       {/* OSM 版權標示(使用條款要求) */}
@@ -297,6 +328,24 @@ const styles = StyleSheet.create({
   },
   zoomDivider: {
     height: 0.5,
+  },
+  userHalo: {
+    position: "absolute",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#4A90D940",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
+  userDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#4A90D9",
+    borderWidth: 2.5,
+    borderColor: "#FFFFFF",
   },
   attribution: {
     position: "absolute",

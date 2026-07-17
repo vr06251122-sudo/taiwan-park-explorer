@@ -2,7 +2,10 @@ import { Pressable, View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
+import { Image } from "expo-image";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { PhotoPlaceholder } from "@/components/photo-placeholder";
+import { getPhotoUrl } from "@/lib/photos";
 import { useColors } from "@/hooks/use-colors";
 import {
   type Park,
@@ -63,6 +66,17 @@ export function ParkCard({ park, showFavorite = true, distanceKm }: ParkCardProp
         pressed && { opacity: 0.7 },
       ]}
     >
+      <View style={styles.cardRow}>
+        {park.photoNames.length > 0 ? (
+          <Image
+            source={{ uri: getPhotoUrl(park.photoNames[0], 240) }}
+            style={styles.thumbnail}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <PhotoPlaceholder style={styles.thumbnail} emojiSize={36} />
+        )}
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
           <View style={styles.titleRow}>
@@ -122,6 +136,7 @@ export function ParkCard({ park, showFavorite = true, distanceKm }: ParkCardProp
 
         {renderStars(park.funRating)}
       </View>
+      </View>
     </Pressable>
   );
 }
@@ -133,8 +148,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     overflow: "hidden",
   },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+  },
+  thumbnail: {
+    width: 104,
+    marginLeft: 12,
+    marginVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#E5EAE2",
+  },
   cardContent: {
     padding: 16,
+    flex: 1,
   },
   cardHeader: {
     marginBottom: 10,

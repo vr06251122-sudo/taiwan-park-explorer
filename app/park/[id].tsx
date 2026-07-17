@@ -11,6 +11,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { getPhotoUrl } from "@/lib/photos";
+import { PhotoPlaceholder } from "@/components/photo-placeholder";
 import { ScreenContainer } from "@/components/screen-container";
 import { StarRating } from "@/components/star-rating";
 import { WeatherCard } from "@/components/weather-card";
@@ -124,6 +127,27 @@ export default function ParkDetailScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {park.photoNames.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.photoStrip}
+            style={styles.photoStripWrap}
+          >
+            {park.photoNames.map((name) => (
+              <Image
+                key={name}
+                source={{ uri: getPhotoUrl(name, 640) }}
+                style={styles.photo}
+                contentFit="cover"
+                transition={250}
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <PhotoPlaceholder style={[styles.photo, styles.photoStripWrap, { width: "100%" }]} emojiSize={56} />
+        )}
+
         <View style={styles.titleSection}>
           <Text style={[styles.parkName, { color: colors.foreground }]}>{park.name}</Text>
           <View style={styles.locationRow}>
@@ -201,7 +225,7 @@ export default function ParkDetailScreen() {
           ]}
         >
           <IconSymbol name="location.north.fill" size={22} color="#FFFFFF" />
-          <Text style={styles.navButtonText}>Google 地圖導航</Text>
+          <Text style={styles.navButtonText}>帶我去</Text>
         </Pressable>
 
         <View style={styles.section}>
@@ -211,7 +235,7 @@ export default function ParkDetailScreen() {
             </Text>
             <Pressable onPress={handleWriteReview}>
               <Text style={[styles.addReviewText, { color: colors.primary }]}>
-                寫評論
+                留個評價
               </Text>
             </Pressable>
           </View>
@@ -239,7 +263,7 @@ export default function ParkDetailScreen() {
           >
             <IconSymbol name="star.fill" size={16} color={colors.primary} />
             <Text style={[styles.writeReviewText, { color: colors.primary }]}>
-              到 Google 地圖寫評論
+              去過了?留個評價吧
             </Text>
           </Pressable>
           <Text style={[styles.reviewNote, { color: colors.muted }]}>
@@ -271,6 +295,20 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+  photoStripWrap: {
+    marginBottom: 20,
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  photoStrip: {
+    gap: 10,
+  },
+  photo: {
+    width: 280,
+    height: 180,
+    borderRadius: 16,
+    backgroundColor: "#E5EAE2",
   },
   titleSection: {
     marginBottom: 20,

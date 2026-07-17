@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
+import { TodayCard } from "@/components/today-card";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useUserLocation } from "@/lib/location-context";
@@ -13,14 +14,14 @@ import {
   type ParkCategory,
   CATEGORY_LABELS,
   CATEGORY_COLORS,
-  CATEGORY_ICONS,
+  CATEGORY_EMOJI,
   PARK_CATEGORIES,
 } from "@/data/parks";
 
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { coords, status, requestLocation } = useUserLocation();
+  const { coords } = useUserLocation();
 
   // 離你最近:Google Nearby Search,由近到遠
   const nearbyQuery = trpc.parks.nearby.useQuery(
@@ -59,12 +60,8 @@ export default function HomeScreen() {
         pressed && { opacity: 0.7 },
       ]}
     >
-      <View style={[styles.categoryIcon, { backgroundColor: CATEGORY_COLORS[item] }]}>
-        <IconSymbol
-          name={CATEGORY_ICONS[item] as any}
-          size={26}
-          color="#FFFFFF"
-        />
+      <View style={[styles.categoryIcon, { backgroundColor: CATEGORY_COLORS[item] + "26" }]}>
+        <Text style={styles.categoryEmoji}>{CATEGORY_EMOJI[item]}</Text>
       </View>
       <Text style={[styles.categoryLabel, { color: colors.foreground }]}>
         {CATEGORY_LABELS[item]}
@@ -92,13 +89,18 @@ export default function HomeScreen() {
           </View>
         </View>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          即時彙整 Google 地圖公園資訊：共融遊戲場、寵物友善空間與滑步車場地
+          全台公園即時資訊,想去哪就搜哪
         </Text>
       </View>
 
+      <TodayCard
+        nearest={nearbyParks[0]}
+        loadingNearby={nearbyQuery.isLoading}
+      />
+
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          公園類型
+          想怎麼玩?
         </Text>
       </View>
       <FlatList
@@ -110,59 +112,37 @@ export default function HomeScreen() {
         contentContainerStyle={styles.categoryList}
       />
 
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          離你最近
-        </Text>
-        {coords && (
-          <Pressable onPress={() => router.push("/search?sort=distance" as any)}>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>查看全部</Text>
-          </Pressable>
-        )}
-      </View>
-
-      {coords ? (
-        nearbyQuery.isLoading ? (
-          renderLoading
-        ) : (
-          <FlatList
-            data={nearbyParks}
-            renderItem={({ item }) => <ParkCard park={item.park} distanceKm={item.distanceKm} />}
-            keyExtractor={(item) => item.park.id}
-            scrollEnabled={false}
-            contentContainerStyle={styles.parkList}
-          />
-        )
-      ) : (
-        <Pressable
-          onPress={requestLocation}
-          disabled={status === "loading"}
-          style={({ pressed }) => [
-            styles.locationPrompt,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-            pressed && { opacity: 0.7 },
-          ]}
-        >
-          <IconSymbol name="location.circle.fill" size={28} color={colors.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.locationPromptTitle, { color: colors.foreground }]}>
-              {status === "loading" ? "正在取得你的位置..." : "開啟定位,推薦附近的公園"}
+      {coords && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              就在你附近
             </Text>
-            <Text style={[styles.locationPromptSub, { color: colors.muted }]}>
-              {status === "denied"
-                ? "定位權限被拒絕,請在瀏覽器或系統設定中允許後再試一次"
-                : "允許定位後,這裡會顯示離你最近的公園"}
-            </Text>
+            <Pressable onPress={() => router.push("/search?sort=distance" as any)}>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>看更多</Text>
+            </Pressable>
           </View>
-        </Pressable>
+
+          {nearbyQuery.isLoading ? (
+            renderLoading
+          ) : (
+            <FlatList
+              data={nearbyParks}
+              renderItem={({ item }) => <ParkCard park={item.park} distanceKm={item.distanceKm} />}
+              keyExtractor={(item) => item.park.id}
+              scrollEnabled={false}
+              contentContainerStyle={styles.parkList}
+            />
+          )}
+        </>
       )}
 
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          熱門公園
+          大家都在去
         </Text>
         <Pressable onPress={() => router.push("/search" as any)}>
-          <Text style={[styles.seeAll, { color: colors.primary }]}>查看全部</Text>
+          <Text style={[styles.seeAll, { color: colors.primary }]}>看更多</Text>
         </Pressable>
       </View>
 
@@ -246,6 +226,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
+  categoryEmoji: {
+    fontSize: 26,
+  },
   categoryLabel: {
     fontSize: 14,
     fontWeight: "600",
@@ -256,23 +239,5 @@ const styles = StyleSheet.create({
   loadingBox: {
     paddingVertical: 32,
     alignItems: "center",
-  },
-  locationPrompt: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 0.5,
-    marginBottom: 20,
-  },
-  locationPromptTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  locationPromptSub: {
-    fontSize: 13,
-    lineHeight: 18,
   },
 });
