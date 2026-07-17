@@ -1,14 +1,15 @@
 /** @type {const} */
+// 柔和色調:低飽和的鼠尾草綠系,搭配溫和的輔助色
 const themeColors = {
-  primary: { light: '#2D7A3E', dark: '#4ADE80' },
-  background: { light: '#F8FAF6', dark: '#141A12' },
-  surface: { light: '#FFFFFF', dark: '#1E2620' },
-  foreground: { light: '#1A2B1F', dark: '#E8F0E5' },
-  muted: { light: '#6B7B6E', dark: '#8FA890' },
-  border: { light: '#D5E3D0', dark: '#2A3830' },
-  success: { light: '#22C55E', dark: '#4ADE80' },
-  warning: { light: '#F5A623', dark: '#FBBF24' },
-  error: { light: '#EF4444', dark: '#F87171' },
+  primary: { light: '#5B9A6E', dark: '#7FC79A' },
+  background: { light: '#F7F8F5', dark: '#171C16' },
+  surface: { light: '#FDFDFC', dark: '#212823' },
+  foreground: { light: '#2E3A31', dark: '#DFE8DF' },
+  muted: { light: '#8A948B', dark: '#97A899' },
+  border: { light: '#E5EAE2', dark: '#2E3A32' },
+  success: { light: '#6FBF8B', dark: '#7FC79A' },
+  warning: { light: '#E9B45C', dark: '#E9C078' },
+  error: { light: '#E08A84', dark: '#E5A19C' },
 };
 
 module.exports = { themeColors };

@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Platform,
   Linking,
-  FlatList,
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -87,8 +86,8 @@ export default function ParkDetailScreen() {
     Linking.openURL(`https://search.google.com/local/writereview?placeid=${park.id}`);
   };
 
-  const renderReviewItem = ({ item }: { item: ParkReview }) => (
-    <View style={[styles.reviewItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+  const renderReviewItem = (item: ParkReview) => (
+    <View key={item.id} style={[styles.reviewItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.reviewHeader}>
         <View style={styles.reviewAuthorRow}>
           <View style={[styles.reviewAvatar, { backgroundColor: colors.primary + "22" }]}>
@@ -240,18 +239,15 @@ export default function ParkDetailScreen() {
             </Pressable>
           </View>
 
-          <FlatList
-            data={park.reviews}
-            renderItem={renderReviewItem}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            contentContainerStyle={styles.reviewsList}
-            ListEmptyComponent={
+          <View style={styles.reviewsList}>
+            {park.reviews.length > 0 ? (
+              park.reviews.map(renderReviewItem)
+            ) : (
               <Text style={[styles.emptyReviews, { color: colors.muted }]}>
                 尚無評論，到 Google 地圖成為第一位評論者！
               </Text>
-            }
-          />
+            )}
+          </View>
 
           <Pressable
             onPress={handleWriteReview}

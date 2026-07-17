@@ -127,12 +127,14 @@ export function ParkCard({ park, showFavorite = true, distanceKm }: ParkCardProp
           ))}
         </View>
 
-        <Text
-          style={[styles.description, { color: colors.muted }]}
-          numberOfLines={2}
-        >
-          {park.description}
-        </Text>
+        {park.description.length > 0 && (
+          <Text
+            style={[styles.description, { color: colors.muted }]}
+            numberOfLines={1}
+          >
+            {park.description}
+          </Text>
+        )}
 
         {renderStars(park.funRating)}
       </View>
@@ -143,9 +145,9 @@ export function ParkCard({ park, showFavorite = true, distanceKm }: ParkCardProp
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 0.5,
-    marginBottom: 12,
+    marginBottom: 10,
     overflow: "hidden",
   },
   cardRow: {
@@ -153,18 +155,18 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
   },
   thumbnail: {
-    width: 104,
-    marginLeft: 12,
-    marginVertical: 12,
-    borderRadius: 12,
+    width: 84,
+    marginLeft: 10,
+    marginVertical: 10,
+    borderRadius: 10,
     backgroundColor: "#E5EAE2",
   },
   cardContent: {
-    padding: 16,
+    padding: 12,
     flex: 1,
   },
   cardHeader: {
-    marginBottom: 10,
+    marginBottom: 6,
   },
   titleRow: {
     flexDirection: "row",
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   parkName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     flex: 1,
     marginRight: 8,
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   categoryTag: {
     flexDirection: "row",
@@ -221,9 +223,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   description: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 6,
   },
   starsRow: {
     flexDirection: "row",

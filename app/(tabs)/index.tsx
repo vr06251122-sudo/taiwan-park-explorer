@@ -1,4 +1,4 @@
-import { FlatList, ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
@@ -51,8 +51,9 @@ export default function HomeScreen() {
     router.push(`/search?category=${cat}` as any);
   };
 
-  const renderCategoryCard = ({ item }: { item: ParkCategory }) => (
+  const renderCategoryCard = (item: ParkCategory) => (
     <Pressable
+      key={item}
       onPress={() => handleCategoryPress(item)}
       style={({ pressed }) => [
         styles.categoryCard,
@@ -103,14 +104,14 @@ export default function HomeScreen() {
           想怎麼玩?
         </Text>
       </View>
-      <FlatList
-        data={PARK_CATEGORIES}
-        renderItem={renderCategoryCard}
-        keyExtractor={(item) => item}
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryList}
-      />
+        style={styles.categoryListBar}
+      >
+        {PARK_CATEGORIES.map(renderCategoryCard)}
+      </ScrollView>
 
       {coords && (
         <>
@@ -126,13 +127,11 @@ export default function HomeScreen() {
           {nearbyQuery.isLoading ? (
             renderLoading
           ) : (
-            <FlatList
-              data={nearbyParks}
-              renderItem={({ item }) => <ParkCard park={item.park} distanceKm={item.distanceKm} />}
-              keyExtractor={(item) => item.park.id}
-              scrollEnabled={false}
-              contentContainerStyle={styles.parkList}
-            />
+            <View style={styles.parkList}>
+              {nearbyParks.map((item) => (
+                <ParkCard key={item.park.id} park={item.park} distanceKm={item.distanceKm} />
+              ))}
+            </View>
           )}
         </>
       )}
@@ -149,13 +148,11 @@ export default function HomeScreen() {
       {popularQuery.isLoading ? (
         renderLoading
       ) : (
-        <FlatList
-          data={popularParks}
-          renderItem={({ item }) => <ParkCard park={item} />}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          contentContainerStyle={styles.parkList}
-        />
+        <View style={styles.parkList}>
+          {popularParks.map((park) => (
+            <ParkCard key={park.id} park={park} />
+          ))}
+        </View>
       )}
       </ScrollView>
     </ScreenContainer>
@@ -206,6 +203,10 @@ const styles = StyleSheet.create({
   seeAll: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  categoryListBar: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   categoryList: {
     gap: 12,

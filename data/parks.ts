@@ -23,12 +23,13 @@ export const CATEGORY_EMOJI: Record<ParkCategory, string> = {
   bike: "🚲",
 };
 
+// 柔和版分類色:降低飽和度,視覺更溫和
 export const CATEGORY_COLORS: Record<ParkCategory, string> = {
-  walk: "#2D7A3E",
-  inclusive: "#4A90D9",
-  slide: "#F5A623",
-  pet: "#8B5E3C",
-  bike: "#E8554E",
+  walk: "#6AA379",
+  inclusive: "#7BABD9",
+  slide: "#E3B05E",
+  pet: "#B08D6C",
+  bike: "#D98B85",
 };
 
 export const CATEGORY_ICONS: Record<ParkCategory, string> = {
