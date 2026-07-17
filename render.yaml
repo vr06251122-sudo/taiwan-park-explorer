@@ -1,0 +1,16 @@
+# Render 部署藍圖:https://render.com/docs/blueprint-spec
+# 在 Render 選「New +」→「Blueprint」→ 選這個 repo 即可自動套用
+
+services:
+  - type: web
+    name: taiwan-park-explorer
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false # 部署時會要求你手動填入,不會存在 repo 裡

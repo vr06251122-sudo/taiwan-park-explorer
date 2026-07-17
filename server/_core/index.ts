@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerPhotoProxy } from "../photoProxy";
+import { registerWebStatic } from "../webStatic";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 
@@ -71,6 +72,9 @@ async function startServer() {
       createContext,
     }),
   );
+
+  // 正式環境:同一伺服器供應前端網頁(web-dist 不存在時自動跳過)
+  registerWebStatic(app);
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
