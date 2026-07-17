@@ -1,45 +1,56 @@
-import { FlatList, View, Text, StyleSheet } from "react-native";
+import { FlatList, View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useFavorites } from "@/lib/favorites-context";
-import { TAIWAN_PARKS } from "@/data/parks";
+import { trpc } from "@/lib/trpc";
 
 export default function FavoritesScreen() {
   const colors = useColors();
   const { favorites } = useFavorites();
 
-  const favoriteParks = TAIWAN_PARKS.filter((p) => favorites.includes(p.id));
+  // 收藏只存 Google Place ID,內容即時向 Google 取得
+  const favoritesQuery = trpc.parks.byIds.useQuery(
+    { ids: favorites },
+    { enabled: favorites.length > 0, staleTime: 10 * 60 * 1000 }
+  );
+  const favoriteParks = favorites.length > 0 ? (favoritesQuery.data ?? []) : [];
 
   return (
     <ScreenContainer className="px-4">
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>我的收藏</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          {favoriteParks.length > 0
-            ? `已收藏 ${favoriteParks.length} 個公園`
+          {favorites.length > 0
+            ? `已收藏 ${favorites.length} 個公園`
             : "尚無收藏公園"}
         </Text>
       </View>
 
-      <FlatList
-        data={favoriteParks}
-        renderItem={({ item }) => <ParkCard park={item} />}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <IconSymbol name="heart" size={48} color={colors.muted} />
-            <Text style={[styles.emptyText, { color: colors.muted }]}>
-              還沒有收藏任何公園
-            </Text>
-            <Text style={[styles.emptySubtext, { color: colors.muted }]}>
-              在公園詳情頁點擊愛心圖示即可收藏
-            </Text>
-          </View>
-        }
-      />
+      {favorites.length > 0 && favoritesQuery.isLoading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={favoriteParks}
+          renderItem={({ item }) => <ParkCard park={item} />}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <IconSymbol name="heart" size={48} color={colors.muted} />
+              <Text style={[styles.emptyText, { color: colors.muted }]}>
+                還沒有收藏任何公園
+              </Text>
+              <Text style={[styles.emptySubtext, { color: colors.muted }]}>
+                在公園詳情頁點擊愛心圖示即可收藏
+              </Text>
+            </View>
+          }
+        />
+      )}
     </ScreenContainer>
   );
 }

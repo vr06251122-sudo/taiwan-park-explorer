@@ -1,14 +1,13 @@
-import { useState, useMemo } from "react";
 import {
   View,
   Text,
   ScrollView,
   Pressable,
-  TextInput,
   StyleSheet,
   Platform,
   Linking,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -18,10 +17,9 @@ import { WeatherCard } from "@/components/weather-card";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useFavorites } from "@/lib/favorites-context";
+import { trpc } from "@/lib/trpc";
 import {
-  TAIWAN_PARKS,
   type ParkReview,
-  type ParkCategory,
   CATEGORY_LABELS,
   CATEGORY_COLORS,
   CATEGORY_ICONS,
@@ -31,20 +29,27 @@ export default function ParkDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
-  const { isFavorite, toggleFavorite, addReview, getReviews } = useFavorites();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
-  const park = TAIWAN_PARKS.find((p) => p.id === id);
+  // 公園完整資訊(含最多 5 則 Google 評論)即時來自 Google Places
+  const parkQuery = trpc.parks.details.useQuery(
+    { id: id ?? "" },
+    { enabled: !!id, staleTime: 10 * 60 * 1000 }
+  );
+  const park = parkQuery.data;
 
-  const [newRating, setNewRating] = useState(0);
-  const [newComment, setNewComment] = useState("");
-  const [authorName, setAuthorName] = useState("");
-  const [showReviewForm, setShowReviewForm] = useState(false);
-
-  const userReviews = park ? getReviews(park.id) : [];
-  const allReviews = useMemo(() => {
-    if (!park) return [];
-    return [...userReviews, ...park.reviews];
-  }, [park, userReviews]);
+  if (parkQuery.isLoading) {
+    return (
+      <ScreenContainer className="px-4">
+        <View style={styles.notFound}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.notFoundText, { color: colors.muted }]}>
+            正在載入公園資訊...
+          </Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   if (!park) {
     return (
@@ -73,21 +78,10 @@ export default function ParkDetailScreen() {
     Linking.openURL(park.googleMapsUrl);
   };
 
-  const handleSubmitReview = () => {
-    if (newRating === 0 || !newComment.trim()) return;
-    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const review: ParkReview = {
-      id: `user_${Date.now()}`,
-      author: authorName.trim() || "匿名使用者",
-      rating: newRating,
-      comment: newComment.trim(),
-      date: new Date().toISOString().split("T")[0],
-    };
-    addReview(park.id, review);
-    setNewRating(0);
-    setNewComment("");
-    setAuthorName("");
-    setShowReviewForm(false);
+  // 評論寫在 Google 地圖上(Google 不開放 API 寫入,官方作法是深層連結)
+  const handleWriteReview = () => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openURL(`https://search.google.com/local/writereview?placeid=${park.id}`);
   };
 
   const renderReviewItem = ({ item }: { item: ParkReview }) => (
@@ -135,7 +129,7 @@ export default function ParkDetailScreen() {
           <View style={styles.locationRow}>
             <IconSymbol name="mappin.and.ellipse" size={15} color={colors.muted} />
             <Text style={[styles.locationText, { color: colors.muted }]}>
-              {park.city} {park.district} · {park.address}
+              {park.address}
             </Text>
           </View>
         </View>
@@ -143,18 +137,18 @@ export default function ParkDetailScreen() {
         <View style={[styles.ratingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.ratingLeft}>
             <Text style={[styles.ratingNumber, { color: colors.foreground }]}>
-              {park.funRating.toFixed(1)}
+              {park.funRating > 0 ? park.funRating.toFixed(1) : "—"}
             </Text>
             <StarRating rating={park.funRating} size={16} />
             <Text style={[styles.ratingCount, { color: colors.muted }]}>
-              {park.reviewCount + userReviews.length} 則評論
+              {park.reviewCount} 則 Google 評論
             </Text>
           </View>
           <View style={[styles.ratingDivider, { backgroundColor: colors.border }]} />
           <View style={styles.ratingRight}>
             <Text style={[styles.funLabel, { color: colors.muted }]}>好玩指數</Text>
             <Text style={[styles.funValue, { color: colors.warning }]}>
-              {park.funRating >= 4.5 ? "超好玩" : park.funRating >= 4 ? "很好玩" : park.funRating >= 3 ? "還不錯" : "普通"}
+              {park.funRating >= 4.5 ? "超好玩" : park.funRating >= 4 ? "很好玩" : park.funRating >= 3 ? "還不錯" : park.funRating > 0 ? "普通" : "尚無評分"}
             </Text>
           </View>
         </View>
@@ -189,27 +183,14 @@ export default function ParkDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>特色介紹</Text>
-          <Text style={[styles.description, { color: colors.muted }]}>
-            {park.description}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>設施清單</Text>
-          <View style={styles.facilitiesGrid}>
-            {park.facilities.map((facility, idx) => (
-              <View
-                key={idx}
-                style={[styles.facilityTag, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              >
-                <IconSymbol name="checkmark" size={14} color={colors.primary} />
-                <Text style={[styles.facilityText, { color: colors.foreground }]}>{facility}</Text>
-              </View>
-            ))}
+        {park.description.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>特色介紹</Text>
+            <Text style={[styles.description, { color: colors.muted }]}>
+              {park.description}
+            </Text>
           </View>
-        </View>
+        )}
 
         <Pressable
           onPress={handleNavigate}
@@ -226,77 +207,44 @@ export default function ParkDetailScreen() {
         <View style={styles.section}>
           <View style={styles.reviewsHeader}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              評論 ({allReviews.length})
+              Google 評論
             </Text>
-            <Pressable
-              onPress={() => {
-                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowReviewForm(!showReviewForm);
-              }}
-            >
+            <Pressable onPress={handleWriteReview}>
               <Text style={[styles.addReviewText, { color: colors.primary }]}>
-                {showReviewForm ? "取消" : "新增評論"}
+                寫評論
               </Text>
             </Pressable>
           </View>
 
-          {showReviewForm && (
-            <View style={[styles.reviewForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.formLabel, { color: colors.foreground }]}>你的名稱</Text>
-              <TextInput
-                style={[styles.formInput, { color: colors.foreground, borderColor: colors.border }]}
-                placeholder="留空則顯示「匿名使用者」"
-                placeholderTextColor={colors.muted}
-                value={authorName}
-                onChangeText={setAuthorName}
-                returnKeyType="done"
-              />
-              <Text style={[styles.formLabel, { color: colors.foreground }]}>好玩指數</Text>
-              <StarRating
-                rating={newRating}
-                size={32}
-                interactive
-                onRatingChange={setNewRating}
-              />
-              <Text style={[styles.formLabel, { color: colors.foreground }]}>評論內容</Text>
-              <TextInput
-                style={[styles.formTextArea, { color: colors.foreground, borderColor: colors.border }]}
-                placeholder="分享你對這個公園的看法..."
-                placeholderTextColor={colors.muted}
-                value={newComment}
-                onChangeText={setNewComment}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-              <Pressable
-                onPress={handleSubmitReview}
-                disabled={newRating === 0 || !newComment.trim()}
-                style={({ pressed }) => [
-                  styles.submitBtn,
-                  {
-                    backgroundColor: newRating === 0 || !newComment.trim() ? colors.muted : colors.primary,
-                  },
-                  pressed && { opacity: 0.85 },
-                ]}
-              >
-                <Text style={styles.submitBtnText}>送出評論</Text>
-              </Pressable>
-            </View>
-          )}
-
           <FlatList
-            data={allReviews}
+            data={park.reviews}
             renderItem={renderReviewItem}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
             contentContainerStyle={styles.reviewsList}
             ListEmptyComponent={
               <Text style={[styles.emptyReviews, { color: colors.muted }]}>
-                尚無評論，成為第一位評論者！
+                尚無評論，到 Google 地圖成為第一位評論者！
               </Text>
             }
           />
+
+          <Pressable
+            onPress={handleWriteReview}
+            style={({ pressed }) => [
+              styles.writeReviewBtn,
+              { borderColor: colors.primary },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <IconSymbol name="star.fill" size={16} color={colors.primary} />
+            <Text style={[styles.writeReviewText, { color: colors.primary }]}>
+              到 Google 地圖寫評論
+            </Text>
+          </Pressable>
+          <Text style={[styles.reviewNote, { color: colors.muted }]}>
+            評論由 Google 地圖提供(最多顯示 5 則精選),你的評論會發布在 Google 地圖上
+          </Text>
         </View>
 
         <View style={{ height: 40 }} />
@@ -408,23 +356,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  facilitiesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  facilityTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 0.5,
-    gap: 6,
-  },
-  facilityText: {
-    fontSize: 14,
-  },
   navButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -449,43 +380,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
   },
-  reviewForm: {
-    borderRadius: 16,
-    borderWidth: 0.5,
-    padding: 16,
-    marginBottom: 16,
-  },
-  formLabel: {
-    fontSize: 15,
-    fontWeight: "500",
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  formInput: {
-    borderWidth: 0.5,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-  },
-  formTextArea: {
-    borderWidth: 0.5,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    minHeight: 80,
-  },
-  submitBtn: {
+  writeReviewBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
     borderRadius: 12,
+    borderWidth: 1,
     marginTop: 16,
   },
-  submitBtnText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+  writeReviewText: {
+    fontSize: 15,
     fontWeight: "600",
+  },
+  reviewNote: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 8,
+    textAlign: "center",
   },
   reviewsList: {
     gap: 12,

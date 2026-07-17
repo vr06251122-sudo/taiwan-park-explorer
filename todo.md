@@ -16,3 +16,6 @@
 - [x] 使用者定位:首頁「離你最近」推薦 + 搜尋依距離排序 (expo-location + haversine)
 - [x] 天氣整合:公園詳情頁顯示即時天氣與降雨機率 (Open-Meteo API)
 - [x] 搜尋頁地圖模式:OpenStreetMap 圖磚地圖 + 分類專屬圖示標記
+- [x] 改接 Google Places API (New):公園/評分/評論即時來自 Google,移除寫死資料
+- [x] 評論改走 Google 深層連結(App 內按「寫評論」跳 Google 地圖)
+- [x] 金鑰安全:GOOGLE_PLACES_API_KEY 只存 server 端 .env(不進版控),前端經 tRPC 轉發

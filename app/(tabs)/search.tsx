@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -17,15 +18,10 @@ import { CategoryPill } from "@/components/category-pill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useUserLocation } from "@/lib/location-context";
+import { useDebounce } from "@/hooks/use-debounce";
 import { haversineKm } from "@/lib/geo";
-import {
-  TAIWAN_PARKS,
-  CITIES,
-  type ParkCategory,
-  CATEGORY_LABELS,
-} from "@/data/parks";
-
-const ALL_CATEGORIES: ParkCategory[] = ["walk", "inclusive", "slide", "pet", "bike"];
+import { trpc } from "@/lib/trpc";
+import { CITIES, PARK_CATEGORIES, type ParkCategory } from "@/data/parks";
 
 export default function SearchScreen() {
   const colors = useColors();
@@ -43,6 +39,21 @@ export default function SearchScreen() {
   const [sortByDistance, setSortByDistance] = useState(params.sort === "distance");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
+  const debouncedText = useDebounce(searchText.trim(), 600);
+
+  // 即時向 Google Places 搜尋(經由自家 server 轉發)
+  const searchQuery = trpc.parks.search.useQuery(
+    {
+      text: debouncedText || undefined,
+      city: selectedCity,
+      categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+    },
+    {
+      staleTime: 5 * 60 * 1000,
+      placeholderData: (prev) => prev, // 換條件時保留舊結果,避免畫面閃爍
+    }
+  );
+
   const toggleCategory = useCallback((cat: ParkCategory) => {
     setSelectedCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
@@ -50,24 +61,8 @@ export default function SearchScreen() {
   }, []);
 
   const filteredParks = useMemo(() => {
-    return TAIWAN_PARKS.filter((park) => {
-      if (searchText.trim()) {
-        const q = searchText.trim().toLowerCase();
-        const matchName = park.name.toLowerCase().includes(q);
-        const matchDesc = park.description.toLowerCase().includes(q);
-        const matchCity = park.city.toLowerCase().includes(q);
-        const matchDistrict = park.district.toLowerCase().includes(q);
-        if (!matchName && !matchDesc && !matchCity && !matchDistrict) return false;
-      }
-      if (selectedCity !== "全部" && park.city !== selectedCity) return false;
-      if (selectedCategories.length > 0) {
-        const hasCat = selectedCategories.some((c) => park.categories.includes(c));
-        if (!hasCat) return false;
-      }
-      if (park.funRating < minRating) return false;
-      return true;
-    });
-  }, [searchText, selectedCity, selectedCategories, minRating]);
+    return (searchQuery.data ?? []).filter((park) => park.funRating >= minRating);
+  }, [searchQuery.data, minRating]);
 
   // 附上與使用者的距離,並依需求排序
   const resultParks = useMemo(() => {
@@ -115,7 +110,7 @@ export default function SearchScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>搜尋公園</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          依名稱、地區或類型篩選
+          資料即時來自 Google 地圖
         </Text>
       </View>
 
@@ -192,7 +187,7 @@ export default function SearchScreen() {
 
       <View style={styles.categoriesContainer}>
         <FlatList
-          data={ALL_CATEGORIES}
+          data={PARK_CATEGORIES}
           renderItem={({ item }) => (
             <CategoryPill
               category={item}
@@ -220,7 +215,7 @@ export default function SearchScreen() {
       >
         <IconSymbol name="slider.horizontal.3" size={16} color={colors.foreground} />
         <Text style={[styles.filterToggleText, { color: colors.foreground }]}>
-          好玩指數篩選
+          Google 星等篩選
         </Text>
         <IconSymbol
           name={showFilters ? "chevron.up" : "chevron.down"}
@@ -231,7 +226,7 @@ export default function SearchScreen() {
 
       {showFilters && (
         <View style={[styles.filterPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {[0, 3, 4, 5].map((r) => (
+          {[0, 3, 4, 4.5].map((r) => (
             <Pressable
               key={r}
               onPress={() => {
@@ -257,7 +252,7 @@ export default function SearchScreen() {
 
       <View style={styles.resultsHeader}>
         <Text style={[styles.resultsCount, { color: colors.muted }]}>
-          共 {filteredParks.length} 個公園
+          {searchQuery.isFetching ? "搜尋中..." : `共 ${filteredParks.length} 個公園`}
         </Text>
         <View style={styles.resultsActions}>
           <Pressable
@@ -316,7 +311,22 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      {viewMode === "map" ? (
+      {searchQuery.isLoading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.emptySubtext, { color: colors.muted }]}>
+            正在向 Google 地圖搜尋公園...
+          </Text>
+        </View>
+      ) : searchQuery.isError ? (
+        <View style={styles.emptyState}>
+          <IconSymbol name="info.circle" size={48} color={colors.muted} />
+          <Text style={[styles.emptyText, { color: colors.muted }]}>搜尋失敗</Text>
+          <Text style={[styles.emptySubtext, { color: colors.muted }]}>
+            請確認網路連線與 API 伺服器是否啟動
+          </Text>
+        </View>
+      ) : viewMode === "map" ? (
         <View style={styles.mapContainer}>
           <ParkMap parks={filteredParks} />
         </View>
@@ -406,6 +416,8 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     marginBottom: 12,
+    flexShrink: 0,
+    height: 40,
   },
   categoriesList: {
     gap: 8,

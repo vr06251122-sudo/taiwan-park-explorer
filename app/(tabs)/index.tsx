@@ -1,4 +1,4 @@
-import { FlatList, ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
+import { FlatList, ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
@@ -8,32 +8,41 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useUserLocation } from "@/lib/location-context";
 import { haversineKm } from "@/lib/geo";
+import { trpc } from "@/lib/trpc";
 import {
-  TAIWAN_PARKS,
   type ParkCategory,
   CATEGORY_LABELS,
   CATEGORY_COLORS,
   CATEGORY_ICONS,
+  PARK_CATEGORIES,
 } from "@/data/parks";
-
-const CATEGORIES: ParkCategory[] = ["walk", "inclusive", "slide", "pet", "bike"];
 
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { coords, status, requestLocation } = useUserLocation();
 
-  const nearbyParks = coords
-    ? TAIWAN_PARKS.map((park) => ({
-        park,
-        distanceKm: haversineKm(coords.latitude, coords.longitude, park.latitude, park.longitude),
-      }))
-        .sort((a, b) => a.distanceKm - b.distanceKm)
-        .slice(0, 4)
-    : [];
+  // 離你最近:Google Nearby Search,由近到遠
+  const nearbyQuery = trpc.parks.nearby.useQuery(
+    { latitude: coords?.latitude ?? 0, longitude: coords?.longitude ?? 0 },
+    { enabled: !!coords, staleTime: 5 * 60 * 1000 }
+  );
+  const nearbyParks = (nearbyQuery.data ?? [])
+    .map((park) => ({
+      park,
+      distanceKm: coords
+        ? haversineKm(coords.latitude, coords.longitude, park.latitude, park.longitude)
+        : 0,
+    }))
+    .slice(0, 4);
 
-  const popularParks = [...TAIWAN_PARKS]
-    .sort((a, b) => b.funRating - a.funRating)
+  // 熱門公園:全台特色公園,依 Google 星等排序
+  const popularQuery = trpc.parks.search.useQuery(
+    { text: "特色公園" },
+    { staleTime: 10 * 60 * 1000 }
+  );
+  const popularParks = [...(popularQuery.data ?? [])]
+    .sort((a, b) => b.funRating * Math.log10(b.reviewCount + 1) - a.funRating * Math.log10(a.reviewCount + 1))
     .slice(0, 6);
 
   const handleCategoryPress = (cat: ParkCategory) => {
@@ -63,6 +72,12 @@ export default function HomeScreen() {
     </Pressable>
   );
 
+  const renderLoading = (
+    <View style={styles.loadingBox}>
+      <ActivityIndicator size="small" color={colors.primary} />
+    </View>
+  );
+
   return (
     <ScreenContainer className="px-4">
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -77,7 +92,7 @@ export default function HomeScreen() {
           </View>
         </View>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          搜尋全台公園，發現共融遊戲場、寵物友善空間與滑步車場地
+          即時彙整 Google 地圖公園資訊：共融遊戲場、寵物友善空間與滑步車場地
         </Text>
       </View>
 
@@ -87,7 +102,7 @@ export default function HomeScreen() {
         </Text>
       </View>
       <FlatList
-        data={CATEGORIES}
+        data={PARK_CATEGORIES}
         renderItem={renderCategoryCard}
         keyExtractor={(item) => item}
         horizontal
@@ -107,13 +122,17 @@ export default function HomeScreen() {
       </View>
 
       {coords ? (
-        <FlatList
-          data={nearbyParks}
-          renderItem={({ item }) => <ParkCard park={item.park} distanceKm={item.distanceKm} />}
-          keyExtractor={(item) => item.park.id}
-          scrollEnabled={false}
-          contentContainerStyle={styles.parkList}
-        />
+        nearbyQuery.isLoading ? (
+          renderLoading
+        ) : (
+          <FlatList
+            data={nearbyParks}
+            renderItem={({ item }) => <ParkCard park={item.park} distanceKm={item.distanceKm} />}
+            keyExtractor={(item) => item.park.id}
+            scrollEnabled={false}
+            contentContainerStyle={styles.parkList}
+          />
+        )
       ) : (
         <Pressable
           onPress={requestLocation}
@@ -147,13 +166,17 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <FlatList
-        data={popularParks}
-        renderItem={({ item }) => <ParkCard park={item} />}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        contentContainerStyle={styles.parkList}
-      />
+      {popularQuery.isLoading ? (
+        renderLoading
+      ) : (
+        <FlatList
+          data={popularParks}
+          renderItem={({ item }) => <ParkCard park={item} />}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          contentContainerStyle={styles.parkList}
+        />
+      )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -229,6 +252,10 @@ const styles = StyleSheet.create({
   },
   parkList: {
     paddingBottom: 24,
+  },
+  loadingBox: {
+    paddingVertical: 32,
+    alignItems: "center",
   },
   locationPrompt: {
     flexDirection: "row",

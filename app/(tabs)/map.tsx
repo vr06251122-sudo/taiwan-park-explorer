@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -7,16 +7,16 @@ import {
   StyleSheet,
   Platform,
   Linking,
+  ActivityIndicator,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { trpc } from "@/lib/trpc";
 import {
-  TAIWAN_PARKS,
   CITIES,
   type Park,
-  type ParkCategory,
   CATEGORY_LABELS,
   CATEGORY_COLORS,
   CATEGORY_ICONS,
@@ -26,10 +26,11 @@ export default function MapScreen() {
   const colors = useColors();
   const [selectedCity, setSelectedCity] = useState("全部");
 
-  const filteredParks = useMemo(() => {
-    if (selectedCity === "全部") return TAIWAN_PARKS;
-    return TAIWAN_PARKS.filter((p) => p.city === selectedCity);
-  }, [selectedCity]);
+  const parksQuery = trpc.parks.search.useQuery(
+    { city: selectedCity },
+    { staleTime: 5 * 60 * 1000, placeholderData: (prev) => prev }
+  );
+  const filteredParks = parksQuery.data ?? [];
 
   const handleNavigate = (park: Park) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -96,7 +97,8 @@ export default function MapScreen() {
       </View>
 
       <FlatList
-        data={CITIES.filter((c) => c === "全部" || TAIWAN_PARKS.some((p) => p.city === c))}
+        style={styles.cityListBar}
+        data={CITIES}
         renderItem={({ item }) => (
           <Pressable
             onPress={() => {
@@ -128,20 +130,27 @@ export default function MapScreen() {
         contentContainerStyle={styles.cityList}
       />
 
-      <FlatList
-        data={filteredParks}
-        renderItem={renderParkItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.parkList}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <IconSymbol name="map.fill" size={48} color={colors.muted} />
-            <Text style={[styles.emptyText, { color: colors.muted }]}>
-              此地區尚無公園資料
-            </Text>
-          </View>
-        }
-      />
+      {parksQuery.isLoading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          style={styles.parkListArea}
+          data={filteredParks}
+          renderItem={renderParkItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.parkList}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <IconSymbol name="map.fill" size={48} color={colors.muted} />
+              <Text style={[styles.emptyText, { color: colors.muted }]}>
+                此地區尚無公園資料
+              </Text>
+            </View>
+          }
+        />
+      )}
     </ScreenContainer>
   );
 }
@@ -159,9 +168,19 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
   },
+  // 橫向選單列必須固定高度且不可壓縮,否則會被下方的長列表擠扁蓋住
+  cityListBar: {
+    flexGrow: 0,
+    flexShrink: 0,
+    height: 56,
+  },
+  parkListArea: {
+    flex: 1,
+  },
   cityList: {
     gap: 8,
     paddingBottom: 16,
+    alignItems: "flex-start",
   },
   cityChip: {
     paddingHorizontal: 16,

@@ -1,49 +1,8 @@
 import { describe, it, expect } from "vitest";
-import {
-  TAIWAN_PARKS,
-  CATEGORY_LABELS,
-  CATEGORY_COLORS,
-  CITIES,
-  type ParkCategory,
-} from "../data/parks";
+import { CATEGORY_LABELS, CATEGORY_COLORS, CITIES } from "../data/parks";
+import { parseAddress, CATEGORY_QUERIES } from "../server/googlePlaces";
 
-describe("Park Data", () => {
-  it("should have parks defined", () => {
-    expect(TAIWAN_PARKS.length).toBeGreaterThan(0);
-  });
-
-  it("should have all required fields for each park", () => {
-    TAIWAN_PARKS.forEach((park) => {
-      expect(park.id).toBeTruthy();
-      expect(park.name).toBeTruthy();
-      expect(park.city).toBeTruthy();
-      expect(park.district).toBeTruthy();
-      expect(park.address).toBeTruthy();
-      expect(park.categories.length).toBeGreaterThan(0);
-      expect(park.funRating).toBeGreaterThanOrEqual(1);
-      expect(park.funRating).toBeLessThanOrEqual(5);
-      expect(park.description).toBeTruthy();
-      expect(park.facilities.length).toBeGreaterThan(0);
-      expect(park.googleMapsUrl).toBeTruthy();
-      expect(park.reviews).toBeDefined();
-    });
-  });
-
-  it("should have unique park IDs", () => {
-    const ids = TAIWAN_PARKS.map((p) => p.id);
-    const uniqueIds = new Set(ids);
-    expect(uniqueIds.size).toBe(ids.length);
-  });
-
-  it("should have valid categories", () => {
-    const validCategories: ParkCategory[] = ["walk", "inclusive", "slide", "pet", "bike"];
-    TAIWAN_PARKS.forEach((park) => {
-      park.categories.forEach((cat) => {
-        expect(validCategories).toContain(cat);
-      });
-    });
-  });
-
+describe("Category constants", () => {
   it("should have all 5 category labels", () => {
     expect(Object.keys(CATEGORY_LABELS).length).toBe(5);
     expect(CATEGORY_LABELS.walk).toBe("單純散步");
@@ -57,30 +16,40 @@ describe("Park Data", () => {
     expect(Object.keys(CATEGORY_COLORS).length).toBe(5);
   });
 
+  it("should have a Google search query for every category", () => {
+    expect(Object.keys(CATEGORY_QUERIES).length).toBe(5);
+    Object.values(CATEGORY_QUERIES).forEach((q) => expect(q.length).toBeGreaterThan(0));
+  });
+
   it("should have cities list with 全部 option", () => {
     expect(CITIES[0]).toBe("全部");
     expect(CITIES.length).toBeGreaterThan(10);
   });
+});
 
-  it("should have reviews with valid ratings", () => {
-    TAIWAN_PARKS.forEach((park) => {
-      park.reviews.forEach((review) => {
-        expect(review.rating).toBeGreaterThanOrEqual(1);
-        expect(review.rating).toBeLessThanOrEqual(5);
-        expect(review.author).toBeTruthy();
-        expect(review.comment).toBeTruthy();
-      });
+describe("parseAddress", () => {
+  it("should parse city and district from Google formatted address", () => {
+    expect(parseAddress("10491台灣台北市中山區龍江街6號")).toEqual({
+      city: "台北市",
+      district: "中山區",
     });
   });
 
-  it("should have parks from multiple cities", () => {
-    const cities = new Set(TAIWAN_PARKS.map((p) => p.city));
-    expect(cities.size).toBeGreaterThanOrEqual(3);
+  it("should normalize 臺 to 台", () => {
+    expect(parseAddress("407台灣臺中市西屯區中科路2966號")).toEqual({
+      city: "台中市",
+      district: "西屯區",
+    });
   });
 
-  it("should have at least one park per category", () => {
-    const allCategories = new Set<string>();
-    TAIWAN_PARKS.forEach((p) => p.categories.forEach((c) => allCategories.add(c)));
-    expect(allCategories.size).toBe(5);
+  it("should handle townships (鄉/鎮)", () => {
+    expect(parseAddress("264台灣宜蘭縣員山鄉員山路一段")).toEqual({
+      city: "宜蘭縣",
+      district: "員山鄉",
+    });
+  });
+
+  it("should return empty strings for unrecognized address", () => {
+    expect(parseAddress("Somewhere in Tokyo, Japan")).toEqual({ city: "", district: "" });
   });
 });
