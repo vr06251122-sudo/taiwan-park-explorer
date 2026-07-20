@@ -1,4 +1,5 @@
-import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
+import { SkeletonParkList } from "@/components/skeleton";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
@@ -70,11 +71,7 @@ export default function HomeScreen() {
     </Pressable>
   );
 
-  const renderLoading = (
-    <View style={styles.loadingBox}>
-      <ActivityIndicator size="small" color={colors.primary} />
-    </View>
-  );
+  const renderLoading = <SkeletonParkList count={3} />;
 
   return (
     <ScreenContainer className="px-4">
@@ -236,9 +233,5 @@ const styles = StyleSheet.create({
   },
   parkList: {
     paddingBottom: 24,
-  },
-  loadingBox: {
-    paddingVertical: 32,
-    alignItems: "center",
   },
 });

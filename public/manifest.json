@@ -1,0 +1,25 @@
+{
+  "name": "台灣公園探索",
+  "short_name": "公園導航",
+  "description": "即時彙整 Google 地圖公園資訊:共融遊戲場、寵物友善空間與滑步車場地",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF6EF",
+  "theme_color": "#4E8C61",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

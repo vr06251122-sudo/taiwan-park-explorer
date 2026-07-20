@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Platform,
   Linking,
-  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -14,6 +13,7 @@ import { Image } from "expo-image";
 import { getPhotoUrl } from "@/lib/photos";
 import { PhotoPlaceholder } from "@/components/photo-placeholder";
 import { ScreenContainer } from "@/components/screen-container";
+import { SkeletonBlock } from "@/components/skeleton";
 import { StarRating } from "@/components/star-rating";
 import { WeatherCard } from "@/components/weather-card";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -44,11 +44,12 @@ export default function ParkDetailScreen() {
   if (parkQuery.isLoading) {
     return (
       <ScreenContainer className="px-4">
-        <View style={styles.notFound}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.notFoundText, { color: colors.muted }]}>
-            正在載入公園資訊...
-          </Text>
+        <View style={{ paddingTop: 24, gap: 14 }}>
+          <SkeletonBlock style={{ height: 180, borderRadius: 16 }} />
+          <SkeletonBlock style={{ height: 26, width: "60%" }} />
+          <SkeletonBlock style={{ height: 14, width: "85%" }} />
+          <SkeletonBlock style={{ height: 90, borderRadius: 16 }} />
+          <SkeletonBlock style={{ height: 90, borderRadius: 16 }} />
         </View>
       </ScreenContainer>
     );

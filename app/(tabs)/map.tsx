@@ -7,10 +7,10 @@ import {
   StyleSheet,
   Platform,
   Linking,
-  ActivityIndicator,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
+import { SkeletonParkList } from "@/components/skeleton";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useUserLocation } from "@/lib/location-context";
@@ -147,9 +147,7 @@ export default function MapScreen() {
       />
 
       {activeQuery.isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <SkeletonParkList count={4} />
       ) : (
         <FlatList
           style={styles.parkListArea}

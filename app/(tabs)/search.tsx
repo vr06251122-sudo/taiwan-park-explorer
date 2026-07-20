@@ -7,12 +7,12 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
+import { SkeletonParkList } from "@/components/skeleton";
 import { ParkMap } from "@/components/park-map";
 import { CategoryPill } from "@/components/category-pill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -315,12 +315,7 @@ export default function SearchScreen() {
       </View>
 
       {searchQuery.isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.emptySubtext, { color: colors.muted }]}>
-            正在向 Google 地圖搜尋公園...
-          </Text>
-        </View>
+        <SkeletonParkList count={4} />
       ) : searchQuery.isError ? (
         <View style={styles.emptyState}>
           <IconSymbol name="info.circle" size={48} color={colors.muted} />

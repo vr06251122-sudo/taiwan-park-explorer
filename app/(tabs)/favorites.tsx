@@ -1,6 +1,7 @@
-import { FlatList, View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { FlatList, View, Text, StyleSheet } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
+import { SkeletonParkList } from "@/components/skeleton";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useFavorites } from "@/lib/favorites-context";
@@ -29,9 +30,7 @@ export default function FavoritesScreen() {
       </View>
 
       {favorites.length > 0 && favoritesQuery.isLoading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <SkeletonParkList count={Math.min(favorites.length, 4)} />
       ) : (
         <FlatList
           data={favoriteParks}
