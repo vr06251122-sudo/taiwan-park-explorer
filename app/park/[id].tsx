@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     width: 280,
     height: 180,
     borderRadius: 16,
-    backgroundColor: "#E5EAE2",
+    backgroundColor: "#EFEAE0",
   },
   titleSection: {
     marginBottom: 20,

@@ -17,7 +17,7 @@ export function PhotoPlaceholder({ style, emojiSize = 40 }: PhotoPlaceholderProp
 
 const styles = StyleSheet.create({
   box: {
-    backgroundColor: "#2D7A3E1A",
+    backgroundColor: "#5B9A6E1A",
     alignItems: "center",
     justifyContent: "center",
   },

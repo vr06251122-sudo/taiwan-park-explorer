@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 0.5,
     overflow: "hidden",
-    backgroundColor: "#E8ECE5",
+    backgroundColor: "#EDE8DE",
   },
   marker: {
     position: "absolute",

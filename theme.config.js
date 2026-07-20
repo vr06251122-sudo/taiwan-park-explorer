@@ -1,12 +1,12 @@
 /** @type {const} */
-// 柔和色調:低飽和的鼠尾草綠系,搭配溫和的輔助色
+// 暖米白背景 + 鼠尾草綠強調色:綠色只用在按鈕與重點,底色走溫暖大地調
 const themeColors = {
   primary: { light: '#5B9A6E', dark: '#7FC79A' },
-  background: { light: '#F7F8F5', dark: '#171C16' },
-  surface: { light: '#FDFDFC', dark: '#212823' },
-  foreground: { light: '#2E3A31', dark: '#DFE8DF' },
-  muted: { light: '#8A948B', dark: '#97A899' },
-  border: { light: '#E5EAE2', dark: '#2E3A32' },
+  background: { light: '#FAF6EF', dark: '#1C1913' },
+  surface: { light: '#FFFFFF', dark: '#262219' },
+  foreground: { light: '#3D382E', dark: '#EAE4D8' },
+  muted: { light: '#8A8375', dark: '#A69D8D' },
+  border: { light: '#EAE3D6', dark: '#3A3529' },
   success: { light: '#6FBF8B', dark: '#7FC79A' },
   warning: { light: '#E9B45C', dark: '#E9C078' },
   error: { light: '#E08A84', dark: '#E5A19C' },
