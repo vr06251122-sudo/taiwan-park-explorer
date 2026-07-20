@@ -19,6 +19,7 @@ import {
   type Park,
   CATEGORY_LABELS,
   CATEGORY_COLORS,
+  CATEGORY_DARK_COLORS,
   CATEGORY_ICONS,
 } from "@/data/parks";
 
@@ -65,9 +66,9 @@ export default function MapScreen() {
             <IconSymbol
               name={CATEGORY_ICONS[cat] as any}
               size={11}
-              color={CATEGORY_COLORS[cat]}
+              color={CATEGORY_DARK_COLORS[cat]}
             />
-            <Text style={[styles.catText, { color: CATEGORY_COLORS[cat] }]}>
+            <Text style={[styles.catText, { color: CATEGORY_DARK_COLORS[cat] }]}>
               {CATEGORY_LABELS[cat]}
             </Text>
           </View>

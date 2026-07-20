@@ -16,7 +16,7 @@ import { useColors } from "@/hooks/use-colors";
 import {
   type Park,
   CATEGORY_LABELS,
-  CATEGORY_COLORS,
+  CATEGORY_DARK_COLORS,
   CATEGORY_ICONS,
 } from "@/data/parks";
 
@@ -216,7 +216,8 @@ export function ParkMap({ parks, height = 420, userCoords }: ParkMapProps) {
 
         {markers.map(({ park, left, top }) => {
           const mainCategory = park.categories[0];
-          const color = CATEGORY_COLORS[mainCategory];
+          // 標記上是白色圖示,底色用深色版才看得清楚
+          const color = CATEGORY_DARK_COLORS[mainCategory];
           const isSelected = selected?.id === park.id;
           return (
             <Pressable

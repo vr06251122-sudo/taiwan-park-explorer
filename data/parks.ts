@@ -23,13 +23,22 @@ export const CATEGORY_EMOJI: Record<ParkCategory, string> = {
   bike: "🚲",
 };
 
-// 柔和版分類色:降低飽和度,視覺更溫和
+// 柔和版分類色:降低飽和度,視覺更溫和(用於淡色背景、圖示)
 export const CATEGORY_COLORS: Record<ParkCategory, string> = {
   walk: "#6AA379",
   inclusive: "#7BABD9",
   slide: "#E3B05E",
   pet: "#B08D6C",
   bike: "#D98B85",
+};
+
+// 深色版分類色:用於文字與需要襯白字的底色,確保可讀性
+export const CATEGORY_DARK_COLORS: Record<ParkCategory, string> = {
+  walk: "#3E7050",
+  inclusive: "#3F6FA3",
+  slide: "#96691C",
+  pet: "#7A5B3C",
+  bike: "#A34E47",
 };
 
 export const CATEGORY_ICONS: Record<ParkCategory, string> = {

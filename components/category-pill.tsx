@@ -6,7 +6,7 @@ import { useColors } from "@/hooks/use-colors";
 import {
   type ParkCategory,
   CATEGORY_LABELS,
-  CATEGORY_COLORS,
+  CATEGORY_DARK_COLORS,
   CATEGORY_ICONS,
 } from "@/data/parks";
 
@@ -18,7 +18,8 @@ interface CategoryPillProps {
 
 export function CategoryPill({ category, selected, onPress }: CategoryPillProps) {
   const colors = useColors();
-  const color = CATEGORY_COLORS[category];
+  // 選中時要襯白字,用深色版確保可讀
+  const color = CATEGORY_DARK_COLORS[category];
 
   const handlePress = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

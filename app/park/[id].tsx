@@ -24,6 +24,7 @@ import {
   type ParkReview,
   CATEGORY_LABELS,
   CATEGORY_COLORS,
+  CATEGORY_DARK_COLORS,
   CATEGORY_ICONS,
 } from "@/data/parks";
 
@@ -196,9 +197,9 @@ export default function ParkDetailScreen() {
                 <IconSymbol
                   name={CATEGORY_ICONS[cat] as any}
                   size={14}
-                  color={CATEGORY_COLORS[cat]}
+                  color={CATEGORY_DARK_COLORS[cat]}
                 />
-                <Text style={[styles.categoryText, { color: CATEGORY_COLORS[cat] }]}>
+                <Text style={[styles.categoryText, { color: CATEGORY_DARK_COLORS[cat] }]}>
                   {CATEGORY_LABELS[cat]}
                 </Text>
               </View>

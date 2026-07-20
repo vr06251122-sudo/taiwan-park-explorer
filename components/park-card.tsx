@@ -12,6 +12,7 @@ import {
   type ParkCategory,
   CATEGORY_LABELS,
   CATEGORY_COLORS,
+  CATEGORY_DARK_COLORS,
   CATEGORY_ICONS,
 } from "@/data/parks";
 import { useFavorites } from "@/lib/favorites-context";
@@ -118,9 +119,9 @@ export function ParkCard({ park, showFavorite = true, distanceKm }: ParkCardProp
               <IconSymbol
                 name={CATEGORY_ICONS[cat] as any}
                 size={12}
-                color={CATEGORY_COLORS[cat]}
+                color={CATEGORY_DARK_COLORS[cat]}
               />
-              <Text style={[styles.categoryText, { color: CATEGORY_COLORS[cat] }]}>
+              <Text style={[styles.categoryText, { color: CATEGORY_DARK_COLORS[cat] }]}>
                 {CATEGORY_LABELS[cat]}
               </Text>
             </View>
