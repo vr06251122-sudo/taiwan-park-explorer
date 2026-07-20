@@ -10,7 +10,19 @@ export function registerWebStatic(app: Express) {
   const webDist = path.resolve(process.cwd(), "web-dist");
   if (!fs.existsSync(path.join(webDist, "index.html"))) return;
 
-  app.use(express.static(webDist));
+  // HTML 不快取(每次都拿最新版,部署後手機不會卡舊畫面);
+  // 帶 hash 檔名的 _expo 資源永久快取(檔名變了才會重新下載)
+  app.use(
+    express.static(webDist, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache");
+        } else if (filePath.includes(`${path.sep}_expo${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    })
+  );
 
   // SPA fallback:非 /api 的路徑(例如 /park/xxx)一律回 index.html,
   // 由前端的 expo-router 依網址渲染正確頁面
@@ -19,6 +31,7 @@ export function registerWebStatic(app: Express) {
       next();
       return;
     }
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.join(webDist, "index.html"));
   });
 
