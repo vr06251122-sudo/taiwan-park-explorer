@@ -13,6 +13,8 @@ import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useUserLocation } from "@/lib/location-context";
+import { haversineKm, formatDistance } from "@/lib/geo";
 import { trpc } from "@/lib/trpc";
 import {
   CITIES,
@@ -25,13 +27,21 @@ import {
 
 export default function MapScreen() {
   const colors = useColors();
+  const { coords } = useUserLocation();
   const [selectedCity, setSelectedCity] = useState("全部");
 
-  const parksQuery = trpc.parks.search.useQuery(
-    { city: selectedCity },
-    { staleTime: 5 * 60 * 1000, placeholderData: (prev) => prev }
+  // 有定位且選「附近」時直接列離你最近的公園;選了縣市則照縣市搜尋
+  const useNearby = !!coords && selectedCity === "全部";
+  const nearbyQuery = trpc.parks.nearby.useQuery(
+    { latitude: coords?.latitude ?? 0, longitude: coords?.longitude ?? 0 },
+    { enabled: useNearby, staleTime: 5 * 60 * 1000 }
   );
-  const filteredParks = parksQuery.data ?? [];
+  const cityQuery = trpc.parks.search.useQuery(
+    { city: selectedCity, latitude: coords?.latitude, longitude: coords?.longitude },
+    { enabled: !useNearby, staleTime: 5 * 60 * 1000, placeholderData: (prev) => prev }
+  );
+  const activeQuery = useNearby ? nearbyQuery : cityQuery;
+  const filteredParks = activeQuery.data ?? [];
 
   const handleNavigate = (park: Park) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -56,6 +66,11 @@ export default function MapScreen() {
         <Text style={[styles.locationText, { color: colors.muted }]} numberOfLines={1}>
           {item.city} {item.district}
         </Text>
+        {coords && (
+          <Text style={[styles.distanceText, { color: colors.primary }]}>
+            {formatDistance(haversineKm(coords.latitude, coords.longitude, item.latitude, item.longitude))}
+          </Text>
+        )}
       </View>
       <View style={styles.categoriesRow}>
         {item.categories.map((cat) => (
@@ -121,7 +136,7 @@ export default function MapScreen() {
                 { color: item === selectedCity ? "#FFFFFF" : colors.foreground },
               ]}
             >
-              {item}
+              {item === "全部" && coords ? "附近" : item}
             </Text>
           </Pressable>
         )}
@@ -131,7 +146,7 @@ export default function MapScreen() {
         contentContainerStyle={styles.cityList}
       />
 
-      {parksQuery.isLoading ? (
+      {activeQuery.isLoading ? (
         <View style={styles.emptyState}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -231,6 +246,12 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 13,
+    flexShrink: 1,
+  },
+  distanceText: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginLeft: 6,
   },
   categoriesRow: {
     flexDirection: "row",

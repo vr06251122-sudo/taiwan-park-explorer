@@ -28,31 +28,23 @@ export function TodayCard({ nearest, loadingNearby }: TodayCardProps) {
     staleTime: 10 * 60 * 1000,
   });
 
-  // 還沒定位:引導開啟
+  // 定位會在 App 開啟時自動請求;還沒拿到前不佔版面,
+  // 只在載入中/被拒時顯示一條細提示(點了可重試 — iOS 需要手勢才能觸發定位)
   if (!coords) {
-    return (
-      <Pressable
-        onPress={requestLocation}
-        disabled={status === "loading"}
-        style={({ pressed }) => [
-          styles.card,
-          { backgroundColor: colors.surface, borderColor: colors.border },
-          pressed && { opacity: 0.7 },
-        ]}
-      >
-        <View style={styles.promptRow}>
-          <IconSymbol name="location.circle.fill" size={28} color={colors.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.promptTitle, { color: colors.foreground }]}>
-              {status === "loading" ? "正在找你在哪..." : "今天想去公園嗎?"}
-            </Text>
-            <Text style={[styles.promptSub, { color: colors.muted }]}>
-              {status === "denied"
-                ? "定位被擋住了,到瀏覽器或系統設定允許後再點一次"
-                : "開個定位,馬上告訴你天氣和最近的好去處"}
-            </Text>
-          </View>
+    if (status === "loading" || status === "idle") {
+      return (
+        <View style={styles.slimBar}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.slimText, { color: colors.muted }]}>正在定位,找你附近的公園...</Text>
         </View>
+      );
+    }
+    return (
+      <Pressable onPress={requestLocation} style={({ pressed }) => [styles.slimBar, pressed && { opacity: 0.6 }]}>
+        <IconSymbol name="location.circle.fill" size={18} color={colors.primary} />
+        <Text style={[styles.slimText, { color: colors.muted }]}>
+          尚未取得定位,點此再試一次(或到瀏覽器設定允許)
+        </Text>
       </Pressable>
     );
   }
@@ -152,19 +144,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     gap: 10,
   },
-  promptRow: {
+  slimBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
+    paddingVertical: 6,
+    marginBottom: 12,
   },
-  promptTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  promptSub: {
+  slimText: {
     fontSize: 13,
-    lineHeight: 18,
   },
   weatherRow: {
     flexDirection: "row",

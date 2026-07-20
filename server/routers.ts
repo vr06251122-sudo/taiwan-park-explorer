@@ -29,6 +29,8 @@ export const appRouter = router({
           text: z.string().optional(),
           city: z.string().optional(),
           categories: z.array(parkCategorySchema).optional(),
+          latitude: z.number().optional(),
+          longitude: z.number().optional(),
         })
       )
       .query(({ input }) => searchParks(input)),

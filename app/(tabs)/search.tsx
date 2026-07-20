@@ -42,11 +42,14 @@ export default function SearchScreen() {
   const debouncedText = useDebounce(searchText.trim(), 600);
 
   // 即時向 Google Places 搜尋(經由自家 server 轉發)
+  // 有定位且未指定縣市時,結果以使用者位置為中心
   const searchQuery = trpc.parks.search.useQuery(
     {
       text: debouncedText || undefined,
       city: selectedCity,
       categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+      latitude: coords?.latitude,
+      longitude: coords?.longitude,
     },
     {
       staleTime: 5 * 60 * 1000,
@@ -334,7 +337,7 @@ export default function SearchScreen() {
         <FlatList
           data={resultParks}
           renderItem={({ item }) => (
-            <ParkCard park={item.park} distanceKm={sortByDistance ? item.distanceKm : undefined} />
+            <ParkCard park={item.park} distanceKm={item.distanceKm} />
           )}
           keyExtractor={(item) => item.park.id}
           contentContainerStyle={styles.resultsList}

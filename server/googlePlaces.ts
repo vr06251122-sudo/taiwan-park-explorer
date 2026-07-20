@@ -147,7 +147,10 @@ async function placesRequest(path: string, options: RequestInit, fieldMask: stri
   return res.json();
 }
 
-async function textSearch(textQuery: string): Promise<GooglePlace[]> {
+async function textSearch(
+  textQuery: string,
+  bias?: { latitude: number; longitude: number }
+): Promise<GooglePlace[]> {
   const data = await placesRequest(
     "/places:searchText",
     {
@@ -157,6 +160,17 @@ async function textSearch(textQuery: string): Promise<GooglePlace[]> {
         languageCode: "zh-TW",
         regionCode: "TW",
         maxResultCount: 15,
+        // 提供使用者座標時,結果以其為中心(30 公里圈)優先
+        ...(bias
+          ? {
+              locationBias: {
+                circle: {
+                  center: { latitude: bias.latitude, longitude: bias.longitude },
+                  radius: 30000,
+                },
+              },
+            }
+          : {}),
       }),
     },
     LIST_FIELD_MASK
@@ -168,12 +182,24 @@ export interface SearchParksInput {
   text?: string;
   city?: string;
   categories?: ParkCategory[];
+  latitude?: number;
+  longitude?: number;
 }
 
 /** 搜尋公園:依分類各發一個關鍵字查詢,合併去重,並標上該分類 */
-export async function searchParks({ text, city, categories }: SearchParksInput): Promise<Park[]> {
-  const cityPart = city && city !== "全部" ? city : "台灣";
+export async function searchParks({
+  text,
+  city,
+  categories,
+  latitude,
+  longitude,
+}: SearchParksInput): Promise<Park[]> {
+  const hasCity = !!city && city !== "全部";
+  // 沒指定縣市但有定位:以使用者位置為中心找;其餘照縣市關鍵字
+  const useBias = !hasCity && latitude !== undefined && longitude !== undefined;
+  const cityPart = hasCity ? city : useBias ? "附近" : "台灣";
   const textPart = text?.trim() ?? "";
+  const bias = useBias ? { latitude: latitude!, longitude: longitude! } : undefined;
 
   const queries: { q: string; cat?: ParkCategory }[] =
     categories && categories.length > 0
@@ -183,7 +209,7 @@ export async function searchParks({ text, city, categories }: SearchParksInput):
         }))
       : [{ q: `${cityPart} ${textPart || "公園"}`.trim() }];
 
-  const resultSets = await Promise.all(queries.map(({ q }) => textSearch(q)));
+  const resultSets = await Promise.all(queries.map(({ q }) => textSearch(q, bias)));
 
   const merged = new Map<string, Park>();
   resultSets.forEach((places, i) => {
