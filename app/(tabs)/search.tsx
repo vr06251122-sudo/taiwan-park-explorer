@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
 import { SkeletonParkList } from "@/components/skeleton";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { ParkMap } from "@/components/park-map";
 import { CategoryPill } from "@/components/category-pill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -38,6 +39,7 @@ export default function SearchScreen() {
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [sortByDistance, setSortByDistance] = useState(params.sort === "distance");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const scrollOffset = useRef(0);
 
   const debouncedText = useDebounce(searchText.trim(), 600);
 
@@ -110,6 +112,7 @@ export default function SearchScreen() {
 
   return (
     <ScreenContainer className="px-4">
+      <PullToRefresh scrollOffset={scrollOffset}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>搜尋公園</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
@@ -335,6 +338,8 @@ export default function SearchScreen() {
             <ParkCard park={item.park} distanceKm={item.distanceKm} />
           )}
           keyExtractor={(item) => item.park.id}
+          onScroll={(e) => (scrollOffset.current = e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={32}
           contentContainerStyle={styles.resultsList}
           ListEmptyComponent={
             <View style={styles.emptyState}>
@@ -349,6 +354,7 @@ export default function SearchScreen() {
           }
         />
       )}
+      </PullToRefresh>
     </ScreenContainer>
   );
 }

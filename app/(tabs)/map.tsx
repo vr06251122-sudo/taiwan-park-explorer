@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { SkeletonParkList } from "@/components/skeleton";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useUserLocation } from "@/lib/location-context";
@@ -29,6 +30,7 @@ export default function MapScreen() {
   const colors = useColors();
   const { coords } = useUserLocation();
   const [selectedCity, setSelectedCity] = useState("全部");
+  const scrollOffset = useRef(0);
 
   // 有定位且選「附近」時直接列離你最近的公園;選了縣市則照縣市搜尋
   const useNearby = !!coords && selectedCity === "全部";
@@ -105,6 +107,7 @@ export default function MapScreen() {
 
   return (
     <ScreenContainer className="px-4">
+      <PullToRefresh scrollOffset={scrollOffset}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>地圖導航</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
@@ -154,6 +157,8 @@ export default function MapScreen() {
           data={filteredParks}
           renderItem={renderParkItem}
           keyExtractor={(item) => item.id}
+          onScroll={(e) => (scrollOffset.current = e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={32}
           contentContainerStyle={styles.parkList}
           ListEmptyComponent={
             <View style={styles.emptyState}>
@@ -165,6 +170,7 @@ export default function MapScreen() {
           }
         />
       )}
+      </PullToRefresh>
     </ScreenContainer>
   );
 }

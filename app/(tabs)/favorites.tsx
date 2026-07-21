@@ -1,7 +1,9 @@
+import { useRef } from "react";
 import { FlatList, View, Text, StyleSheet } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { ParkCard } from "@/components/park-card";
 import { SkeletonParkList } from "@/components/skeleton";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useFavorites } from "@/lib/favorites-context";
@@ -10,6 +12,7 @@ import { trpc } from "@/lib/trpc";
 export default function FavoritesScreen() {
   const colors = useColors();
   const { favorites } = useFavorites();
+  const scrollOffset = useRef(0);
 
   // 收藏只存 Google Place ID,內容即時向 Google 取得
   const favoritesQuery = trpc.parks.byIds.useQuery(
@@ -20,6 +23,7 @@ export default function FavoritesScreen() {
 
   return (
     <ScreenContainer className="px-4">
+      <PullToRefresh scrollOffset={scrollOffset}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>口袋名單</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
@@ -36,6 +40,8 @@ export default function FavoritesScreen() {
           data={favoriteParks}
           renderItem={({ item }) => <ParkCard park={item} />}
           keyExtractor={(item) => item.id}
+          onScroll={(e) => (scrollOffset.current = e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={32}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.emptyState}>
@@ -50,6 +56,7 @@ export default function FavoritesScreen() {
           }
         />
       )}
+      </PullToRefresh>
     </ScreenContainer>
   );
 }

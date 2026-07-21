@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
 import { SkeletonParkList } from "@/components/skeleton";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
@@ -23,6 +25,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { coords } = useUserLocation();
+  const scrollOffset = useRef(0);
 
   // 離你最近:Google Nearby Search,由近到遠
   const nearbyQuery = trpc.parks.nearby.useQuery(
@@ -75,7 +78,12 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer className="px-4">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <PullToRefresh scrollOffset={scrollOffset}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={(e) => (scrollOffset.current = e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={32}
+      >
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
@@ -152,6 +160,7 @@ export default function HomeScreen() {
         </View>
       )}
       </ScrollView>
+      </PullToRefresh>
     </ScreenContainer>
   );
 }
